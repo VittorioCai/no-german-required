@@ -27,6 +27,20 @@ companies:
   - {name: Moss, ats: ashby, slug: moss}
   - {name: Tacto, ats: ashby, slug: tacto}
 
+  # --- Workday tenants (big corporates) ---
+  # Verified via live job URLs on 2026-07-11. Find tenant/site in the careers
+  # page URL: https://{tenant}.wd{N}.myworkdayjobs.com/{site}/...
+  - {name: Airbus, ats: workday, tenant: ag, wd: 3, site: Airbus}
+  - {name: Deutsche Bank, ats: workday, tenant: db, wd: 3, site: DBWebsite}
+  - {name: ZEISS, ats: workday, tenant: zeissgroup, wd: 3, site: External}
+  - {name: thyssenkrupp Steel, ats: workday, tenant: steeleurope, wd: 3, site: Job_Board}
+  - {name: Hitachi, ats: workday, tenant: hitachi, wd: 1, site: hitachi}
+  - {name: Pfizer, ats: workday, tenant: pfizer, wd: 1, site: PfizerCareers}
+  - {name: BorgWarner, ats: workday, tenant: borgwarner, wd: 5, site: BorgWarner_Careers}
+  - {name: Moderna, ats: workday, tenant: modernatx, wd: 1, site: M_tx}
+  - {name: IQVIA, ats: workday, tenant: iqvia, wd: 1, site: IQVIA}
+  - {name: Boeing, ats: workday, tenant: boeing, wd: 1, site: EXTERNAL_CAREERS}
+
 # Checked 2026-07-11 and NOT available via public ATS feeds (use own career systems
 # or moved ATS) — do not re-add without verifying:
 # Zalando, Delivery Hero, Flink, Babbel, wefox, Pitch, Personio, Aleph Alpha,

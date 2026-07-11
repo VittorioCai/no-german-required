@@ -43,15 +43,18 @@ def run(dry_run: bool = False):
     profile = load_yaml(os.path.join(ROOT, "profile.yaml"))
     companies = load_yaml(os.path.join(ROOT, "data", "companies.yaml"))["companies"]
 
-    # 1. Fetch
+    from .track import tracked_urls
+    seen, applied = load_seen(), tracked_urls()
+
+    # 1. Fetch (Workday skips already-seen ids to save per-job detail requests)
+    from .sources.workday import WorkdaySource
     jobs = []
-    for source in (ArbeitnowSource(), ATSSource(companies)):
+    for source in (ArbeitnowSource(), ATSSource(companies),
+                   WorkdaySource(companies, skip_ids=seen)):
         jobs.extend(source.fetch())
     stats = {"total": len(jobs)}
 
     # 2. Dedup (seen ids + already-applied URLs)
-    from .track import tracked_urls
-    seen, applied = load_seen(), tracked_urls()
     fresh = [j for j in jobs if j.id not in seen and j.url not in applied]
     print(f"[dedup] {len(fresh)} new of {len(jobs)} ({len(applied)} tracked applications excluded)")
 

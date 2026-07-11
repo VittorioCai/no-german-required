@@ -86,11 +86,12 @@ to sync state with the GitHub Actions runs.
 ## How it works
 
 ```
-Arbeitnow API ─┐
-               ├─→ dedup ─→ rule gate ─→ LLM judge ─→ email digest
-ATS feeds ─────┘   (seen.json)  (free)     (≤25 calls)    (top 5 + near misses)
-(Greenhouse/Ashby,
- 16 verified German tech companies)
+Arbeitnow API ──┐
+ATS feeds ──────┼─→ dedup ─→ rule gate ─→ LLM judge ─→ email digest
+(Greenhouse/    │  (seen.json)  (free)    (budget-capped)  (top N + near misses)
+ Ashby, 19 cos) │
+Workday ────────┘
+(Airbus, Deutsche Bank, ZEISS, thyssenkrupp, Pfizer, ...)
 ```
 
 The LLM returns structured judgment per job:
