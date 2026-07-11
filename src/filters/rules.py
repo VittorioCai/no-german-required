@@ -33,6 +33,21 @@ _g = [re.compile(p, re.I) for p in GERMAN_REQUIRED]
 _e = [re.compile(p, re.I) for p in ENGLISH_FRIENDLY]
 
 
+# Words that start with a role keyword but are NOT roles.
+_ROLE_STOPWORDS = {
+    "international", "internationale", "internationaler", "internationales",
+    "internal", "internally", "internet",
+}
+
+
+def _title_matches_role(title: str, roles: list) -> bool:
+    for r in roles:
+        for m in re.finditer(rf"\b{re.escape(r)}\w*", title):
+            if m.group(0) not in _ROLE_STOPWORDS:
+                return True
+    return False
+
+
 def _match_any(patterns, text):
     for p in patterns:
         m = p.search(text)
@@ -45,9 +60,11 @@ def gate(job, profile) -> tuple:
     """Returns (verdict, reason)."""
     text = f"{job.title}\n{job.description}"
 
-    # 1. Role keywords must appear in the title.
+    # 1. Role keywords must appear in the title. Word-start match so German
+    # compounds work ("Praktikumsstelle", "Praktikantin", "Werkstudenten"),
+    # with a stoplist so "intern" doesn't match "International"/"Internal".
     roles = [r.lower() for r in profile.get("role_keywords", [])]
-    if roles and not any(r in job.title.lower() for r in roles):
+    if roles and not _title_matches_role(job.title.lower(), roles):
         return "reject", "title does not match role keywords"
 
     # 2. Field keywords anywhere.
