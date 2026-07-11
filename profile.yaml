@@ -31,8 +31,12 @@ field_keywords:
 cities: []
 germany_only: true
 
-# Your German level: A1/A2/B1/B2/C1. Jobs requiring more get score-capped.
+# Your German level: A1/A2/B1/B2/C1.
 german_level: A1
+
+# If true, jobs requiring more German than your level are NOT excluded —
+# they get a score penalty and a clear red flag, and you decide.
+apply_anyway: true
 
 # Minimum LLM match score (0-100) to appear in "Today's matches"
 min_score: 30

@@ -21,7 +21,10 @@ Analyze this job posting and answer in strict JSON (no markdown, no commentary):
 
 Rules:
 - An English JD does NOT imply an English workplace. Look for explicit language cues.
-- If german_required exceeds the student's level {german_level}, cap match_score at 25.
+- If german_required exceeds the student's level {german_level}, do NOT exclude the
+  job: score it on actual fit, subtract 10-20 points, and add a red flag stating the
+  required German level (e.g. "requires B2 German — above your A1"). A strong fit
+  with a language stretch is still worth showing.
 - Customer-facing roles in the German market usually need German even if unstated — flag it.
 
 Job posting:

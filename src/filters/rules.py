@@ -113,6 +113,9 @@ def gate(job, profile) -> tuple:
     if hit:
         friendly = _match_any(_e, text)
         if not friendly:
+            if profile.get("apply_anyway"):
+                # Don't exclude — LLM will penalize and red-flag it.
+                return "pass", f"German mentioned: “{hit.strip()}” (apply_anyway)"
             return "reject", f"German required: “{hit.strip()}”"
         # Contradictory signals → let the LLM decide.
         return "pass", f"mixed signals: “{hit.strip()}” vs “{friendly.strip()}”"
