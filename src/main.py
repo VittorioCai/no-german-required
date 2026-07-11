@@ -15,9 +15,9 @@ from .sources.ats import ATSSource
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SEEN_PATH = os.path.join(ROOT, "data", "seen.json")
-MAX_LLM_CALLS = int(os.environ.get("MAX_LLM_CALLS", "25"))
-TOP_N = 5
-NEAR_MISS_N = 3
+MAX_LLM_CALLS = int(os.environ.get("MAX_LLM_CALLS") or "25")
+TOP_N = int(os.environ.get("TOP_N") or "10")
+NEAR_MISS_N = int(os.environ.get("NEAR_MISS_N") or "3")
 
 
 def load_yaml(path):
