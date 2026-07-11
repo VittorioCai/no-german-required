@@ -43,6 +43,7 @@ class ArbeitnowSource(Source):
                     description=_strip_html(j.get("description", ""))[:6000],
                     source=self.name,
                     tags=j.get("tags", []) + j.get("job_types", []),
+                    country="DE",  # Arbeitnow is a Germany-focused board
                 ))
             url = (payload.get("links") or {}).get("next")
             if not url:

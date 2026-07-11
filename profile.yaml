@@ -23,19 +23,14 @@ field_keywords:
   - machine learning
   - artificial intelligence
 
-# Target cities (substring match on location; "remote" catches remote roles)
-cities:
-  - munich
-  - münchen
-  - heilbronn
-  - stuttgart
-  - berlin
-  - hamburg
-  - remote
-  - germany
+# Target cities (substring match on location; empty list = no city filter).
+# germany_only keeps foreign offices of international companies out
+# (N26 Barcelona, HelloFresh US, ...) while accepting any German location.
+cities: []
+germany_only: true
 
 # Your German level: A1/A2/B1/B2/C1. Jobs requiring more get score-capped.
-german_level: B1
+german_level: A1
 
 # Minimum LLM match score (0-100) to appear in "Today's matches"
 min_score: 60

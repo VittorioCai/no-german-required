@@ -33,6 +33,24 @@ _g = [re.compile(p, re.I) for p in GERMAN_REQUIRED]
 _e = [re.compile(p, re.I) for p in ENGLISH_FRIENDLY]
 
 
+# Location hints that mean "in Germany" on ATS boards of international
+# companies (which also list foreign offices). Lowercase substrings.
+GERMANY_HINTS = {
+    "germany", "deutschland", "berlin", "munich", "münchen", "muenchen",
+    "hamburg", "frankfurt", "cologne", "köln", "koeln", "stuttgart",
+    "düsseldorf", "duesseldorf", "dusseldorf", "leipzig", "dresden",
+    "nuremberg", "nürnberg", "nuernberg", "hannover", "hanover", "bremen",
+    "essen", "dortmund", "bonn", "mannheim", "karlsruhe", "heidelberg",
+    "heilbronn", "aachen", "münster", "muenster", "augsburg", "wiesbaden",
+    "mainz", "kiel", "rostock", "kassel", "potsdam", "jena", "ulm",
+    "regensburg", "ingolstadt", "darmstadt", "freiburg", "erlangen",
+    "wolfsburg", "braunschweig", "bielefeld", "bochum", "wuppertal",
+    "saarbrücken", "saarbruecken", "erfurt", "magdeburg", "lübeck",
+    "luebeck", "paderborn", "würzburg", "wuerzburg", "tübingen",
+    "tuebingen", "garching", "unterföhring", "walldorf", "bad homburg",
+}
+
+
 # Words that start with a role keyword but are NOT roles.
 _ROLE_STOPWORDS = {
     "international", "internationale", "internationaler", "internationales",
@@ -73,9 +91,13 @@ def gate(job, profile) -> tuple:
         return "reject", "no field keyword match"
 
     # 3. Location.
-    cities = [c.lower() for c in profile.get("cities", [])]
-    if cities and not any(c in job.location.lower() for c in cities):
+    loc = job.location.lower()
+    cities = [c.lower() for c in profile.get("cities", []) or []]
+    if cities and not any(c in loc for c in cities):
         return "reject", f"location '{job.location}' not in target cities"
+    if profile.get("germany_only") and job.country != "DE" \
+            and not any(h in loc for h in GERMANY_HINTS):
+        return "reject", f"location '{job.location}' not in Germany"
 
     # 4. Language gate.
     hit = _match_any(_g, text)

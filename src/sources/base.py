@@ -12,6 +12,7 @@ class Job:
     description: str   # plain text (HTML stripped)
     source: str
     tags: list = field(default_factory=list)
+    country: str = ""  # "DE" if the source is Germany-only (skips geo check)
 
 
 class Source:
