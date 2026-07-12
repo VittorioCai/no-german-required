@@ -39,8 +39,9 @@ difference. This agent reads the fine print for you:
 
 **No auto-apply.** Ever. Auto-application bots get accounts banned, waste recruiters'
 time, and produce spray-and-pray applications that hurt you. This agent finds and
-filters; *you* apply. It also only uses **public, no-auth APIs**
-([Arbeitnow](https://www.arbeitnow.com/api), Greenhouse/Lever/Ashby public boards) —
+filters; *you* apply. It also only uses **public, no-auth APIs and career feeds**
+([Arbeitnow](https://www.arbeitnow.com/api), Greenhouse, Lever, Ashby, Workday,
+Personio, SmartRecruiters, and Recruitee) —
 no scraping behind login walls, no ToS violations.
 
 ## Quickstart (5 minutes)
@@ -91,12 +92,11 @@ to sync state with the GitHub Actions runs.
 ## How it works
 
 ```
-Arbeitnow API ──┐
-ATS feeds ──────┼─→ dedup ─→ rule gate ─→ LLM judge ─→ email digest
-(Greenhouse/    │  (seen.json)  (free)    (budget-capped)  (top N + near misses)
- Ashby, 19 cos) │
-Workday ────────┘
-(Airbus, Deutsche Bank, ZEISS, thyssenkrupp, Pfizer, ...)
+Arbeitnow API ──────────┐
+Greenhouse/Lever/Ashby ─┤
+Personio/Recruitee ─────┼─→ cross-source dedup ─→ rule gate ─→ LLM judge ─→ digest
+SmartRecruiters ────────┤      (free)               (free)    (budget-capped)
+Workday ────────────────┘
 ```
 
 The LLM returns structured judgment per job:
@@ -124,12 +124,14 @@ Two kinds of sources, both public and auth-free:
 - **[Arbeitnow](https://www.arbeitnow.com/english-speaking-jobs)** — a Germany-focused
   English-friendly job board, ~300 live postings, mostly startups and mid-size tech.
   Companies here change daily; you don't configure anything.
-- **35 monitored companies** in [`data/companies.yaml`](data/companies.yaml), fetched
+- **45 monitored companies** in [`data/companies.yaml`](data/companies.yaml), fetched
   directly from their ATS feeds:
   fintech (N26, Trade Republic, Solaris, Deutsche Bank...), consumer tech (HelloFresh,
   GetYourGuide, Flix, FreeNow, Scout24...), B2B software (Celonis, Contentful,
   commercetools, KONUX...), industrial (Airbus, thyssenkrupp Steel, ZEISS, BorgWarner,
-  Zeppelin, Isar Aerospace), pharma (Pfizer, Moderna, GSK, IQVIA) and more.
+  Zeppelin, Isar Aerospace), pharma (Pfizer, Moderna, GSK, IQVIA), plus Personio,
+  SmartRecruiters, and Recruitee employers such as UnternehmerTUM, Scalable Capital,
+  TWAICE, and neXenio.
 
 **Not covered:** companies on SuccessFactors or fully custom career portals
 (BMW, Mercedes-Benz, Audi, VW, Siemens, Bosch, SAP, DHL...). Their student roles

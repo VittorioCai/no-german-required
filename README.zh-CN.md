@@ -34,7 +34,8 @@
 
 **永不自动投递。** 自动投递机器人会导致账号封禁、浪费招聘方时间,海投产生的低质量
 申请只会害了你。这个 agent 只负责发现和筛选,申请由*你*来。它也只使用**公开免鉴权
-API**([Arbeitnow](https://www.arbeitnow.com/api)、Greenhouse/Lever/Ashby 公开看板)——
+API 和招聘源**([Arbeitnow](https://www.arbeitnow.com/api)、Greenhouse、Lever、Ashby、
+Workday、Personio、SmartRecruiters、Recruitee)——
 不爬登录墙后的数据,不违反任何平台服务条款。
 
 ## 快速开始(5 分钟)
@@ -84,11 +85,11 @@ GitHub Actions 的运行状态同步。
 ## 工作原理
 
 ```
-Arbeitnow API ─┐
-               ├─→ 去重 ─→ 规则筛选 ─→ LLM 精判 ─→ 日报推送
-ATS 公开接口 ──┘  (seen.json)  (免费)    (≤25 次调用)  (Top 10 + 差一点的)
-(Greenhouse/Ashby,
- 35 家已验证的德国公司)
+Arbeitnow API ──────────┐
+Greenhouse/Lever/Ashby ─┤
+Personio/Recruitee ─────┼─→ 跨来源去重 ─→ 规则筛选 ─→ LLM 精判 ─→ 日报
+SmartRecruiters ────────┤       (免费)       (免费)      (≤25 次调用)
+Workday ────────────────┘
 ```
 
 LLM 对每个岗位输出结构化判断:
@@ -115,11 +116,12 @@ LLM 对每个岗位输出结构化判断:
 - **[Arbeitnow](https://www.arbeitnow.com/english-speaking-jobs)** —— 德国英语友好
   岗位聚合板,约 300 个在招岗位,以创业公司和中型科技公司为主。公司每天都在变,
   无需配置。
-- **[`data/companies.yaml`](data/companies.yaml) 中固定监控的 35 家公司**,直接从
+- **[`data/companies.yaml`](data/companies.yaml) 中固定监控的 45 家公司**,直接从
   各家 ATS 接口拉取:金融科技(N26、Trade Republic、Solaris、德意志银行……)、
   消费科技(HelloFresh、GetYourGuide、Flix、FreeNow、Scout24……)、企业软件
   (Celonis、Contentful、commercetools、KONUX……)、工业制造(Airbus、蒂森克虏伯、
-  蔡司、BorgWarner、Zeppelin、Isar Aerospace)、医药(辉瑞、Moderna、GSK、IQVIA)等。
+  蔡司、BorgWarner、Zeppelin、Isar Aerospace)、医药(辉瑞、Moderna、GSK、IQVIA),
+  以及 UnternehmerTUM、Scalable Capital、TWAICE、neXenio 等新来源公司。
 
 **不覆盖**:使用 SuccessFactors 或完全自建招聘系统的公司(宝马、奔驰、奥迪、大众、
 西门子、博世、SAP、DHL……)。它们的学生岗偶尔会出现在 Arbeitnow 里,但别指望。

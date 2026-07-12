@@ -1,5 +1,6 @@
 from pathlib import Path
 import unittest
+import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,6 +35,17 @@ class ReadmeTests(unittest.TestCase):
         self.assertIn("[English Job Agent for Germany]", email)
         for relative in ("README.md", "README.zh-CN.md", "CONTRIBUTING.md", "LICENSE", "src/main.py", "src/notify/email.py"):
             self.assertNotIn("no-german-required", (ROOT / relative).read_text(encoding="utf-8"))
+
+    def test_new_public_ats_families_are_configured_and_documented(self):
+        companies = yaml.safe_load((ROOT / "data/companies.yaml").read_text(encoding="utf-8"))["companies"]
+        counts = {ats: sum(company.get("ats") == ats for company in companies)
+                  for ats in ("personio", "smartrecruiters", "recruitee")}
+        self.assertEqual(counts, {"personio": 4, "smartrecruiters": 3, "recruitee": 3})
+        main = (ROOT / "src/main.py").read_text(encoding="utf-8")
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        for name in ("Personio", "SmartRecruiters", "Recruitee"):
+            self.assertIn(f"{name}Source", main)
+            self.assertIn(name, readme)
 
 
 if __name__ == "__main__":

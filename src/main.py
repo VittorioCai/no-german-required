@@ -5,21 +5,27 @@ Run: python -m src.main [--dry-run]
 """
 import json
 import os
+import re
 import sys
 from collections import Counter
 from datetime import datetime, timezone
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import yaml
 
 from .filters.rules import gate, pre_score
 from .sources.arbeitnow import ArbeitnowSource
 from .sources.ats import ATSSource
+from .sources.personio import PersonioSource
+from .sources.recruitee import RecruiteeSource
+from .sources.smartrecruiters import SmartRecruitersSource
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SEEN_PATH = os.path.join(ROOT, "data", "seen.json")
 MAX_LLM_CALLS = int(os.environ.get("MAX_LLM_CALLS") or "25")
 TOP_N = int(os.environ.get("TOP_N") or "10")
 NEAR_MISS_N = int(os.environ.get("NEAR_MISS_N") or "3")
+TRACKING_PARAMS = {"source", "ref", "referrer", "gh_src", "lever-source"}
 
 
 def load_yaml(path):
@@ -51,6 +57,62 @@ def save_seen(seen: dict):
                             for job_id, seen_at in newest]}, f, indent=0)
 
 
+def _canonical_url(url: str) -> str:
+    try:
+        parts = urlsplit(url)
+        if parts.scheme not in {"http", "https"} or not parts.netloc:
+            return ""
+        query = [(key, value) for key, value in parse_qsl(parts.query)
+                 if not key.lower().startswith("utm_") and key.lower() not in TRACKING_PARAMS]
+        return urlunsplit((parts.scheme.lower(), parts.netloc.lower(),
+                           parts.path.rstrip("/"), urlencode(sorted(query)), ""))
+    except ValueError:
+        return ""
+
+
+def _normalized(value: str) -> str:
+    return " ".join(re.sub(r"[^\w]+", " ", value or "", flags=re.UNICODE).lower().split())
+
+
+def deduplicate_jobs(jobs: list) -> list:
+    """Collapse cross-source duplicates, preferring first-party and fuller records."""
+    parents = list(range(len(jobs)))
+
+    def find(index):
+        while parents[index] != index:
+            parents[index] = parents[parents[index]]
+            index = parents[index]
+        return index
+
+    def union(left, right):
+        left, right = find(left), find(right)
+        if left != right:
+            parents[max(left, right)] = min(left, right)
+
+    by_url, by_signature = {}, {}
+    for index, job in enumerate(jobs):
+        url_key = _canonical_url(job.url)
+        signature = tuple(_normalized(value) for value in (job.company, job.title, job.location))
+        signature_key = signature if all(signature) else None
+        if url_key:
+            if url_key in by_url:
+                union(index, by_url[url_key])
+            else:
+                by_url[url_key] = index
+        if signature_key:
+            if signature_key in by_signature:
+                union(index, by_signature[signature_key])
+            else:
+                by_signature[signature_key] = index
+
+    groups = {}
+    for index, job in enumerate(jobs):
+        groups.setdefault(find(index), []).append(job)
+    return [max(group, key=lambda job: (job.source != "arbeitnow",
+                                        len(job.description or "")))
+            for group in groups.values()]
+
+
 def run(dry_run: bool = False):
     profile = load_yaml(os.path.join(ROOT, "profile.yaml"))
     companies = load_yaml(os.path.join(ROOT, "data", "companies.yaml"))["companies"]
@@ -61,10 +123,14 @@ def run(dry_run: bool = False):
     # 1. Fetch (Workday skips already-seen ids to save per-job detail requests)
     from .sources.workday import WorkdaySource
     jobs = []
-    for source in (ArbeitnowSource(), ATSSource(companies),
-                   WorkdaySource(companies, skip_ids=seen)):
+    for source in (ATSSource(companies), PersonioSource(companies),
+                   SmartRecruitersSource(companies), RecruiteeSource(companies),
+                   WorkdaySource(companies, skip_ids=seen), ArbeitnowSource()):
         jobs.extend(source.fetch())
-    stats = {"total": len(jobs)}
+    fetched = len(jobs)
+    jobs = deduplicate_jobs(jobs)
+    stats = {"fetched": fetched, "total": len(jobs)}
+    print(f"[cross-dedup] {len(jobs)} unique of {fetched} fetched")
 
     # 2. Dedup (seen ids + already-applied URLs)
     fresh = [j for j in jobs if j.id not in seen and j.url not in applied]
