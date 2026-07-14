@@ -1,8 +1,11 @@
-# no-german-required 🇩🇪🚫🗣️
+# English Job Agent for Germany 🇩🇪🔍
 
 [English](README.md) | **简体中文**
 
-**为德语不流利的在德留学生打造的找工作 agent。**
+**No German Required? Check before you apply.**
+
+为在德国寻找英语友好岗位的留学生自动发现、筛选和排序职位,识别隐藏的德语要求,
+并发送每日摘要。
 
 每天自动扫描英语友好的岗位源,识别关键词过滤器抓不住的隐藏德语要求,用 LLM 按*你的*
 个人档案给每个岗位打分,再把精简日报发到你邮箱。Fork 仓库、填两个 secret 就能用——
@@ -21,7 +24,7 @@
   且理解你的德语水平(B1 ≠ 零基础:"German is a plus" 的岗位会保留)
 - 📊 **打分推荐,不是灌列表** —— 每个匹配岗位附 0-100 匹配分、工作语言判断和
   红旗提示(无薪、注册学籍要求、每周 5 天到岗……)
-- 📬 **每天一份日报** —— 邮件或 Telegram;Top 5 匹配 + 3 个"差一点"的岗位,
+- 📬 **每天一份日报** —— 邮件或 Telegram;Top 10 匹配 + 3 个"差一点"的岗位,
   方便你校准过滤器
 - 📋 **申请追踪** —— 标记为已申请/面试/offer 后,该岗位不再出现在日报里
 - 🆓 **零基础设施** —— GitHub Actions + 你自己的 LLM key
@@ -31,7 +34,8 @@
 
 **永不自动投递。** 自动投递机器人会导致账号封禁、浪费招聘方时间,海投产生的低质量
 申请只会害了你。这个 agent 只负责发现和筛选,申请由*你*来。它也只使用**公开免鉴权
-API**([Arbeitnow](https://www.arbeitnow.com/api)、Greenhouse/Lever/Ashby 公开看板)——
+API 和招聘源**([Arbeitnow](https://www.arbeitnow.com/api)、Greenhouse、Lever、Ashby、
+Workday、Personio、SmartRecruiters、Recruitee)——
 不爬登录墙后的数据,不违反任何平台服务条款。
 
 ## 快速开始(5 分钟)
@@ -54,7 +58,8 @@ API**([Arbeitnow](https://www.arbeitnow.com/api)、Greenhouse/Lever/Ashby 公开
    见 [`src/notify/telegram.py`](src/notify/telegram.py))
 5. **测试**:Actions 页 → *Daily job scan* → *Run workflow*
 
-之后每天早上 ~7 点(德国时间)日报准时送达。
+任务每天 06:00 UTC 运行:德国冬令时约 07:00、夏令时约 08:00。GitHub Actions
+有时会稍晚开始执行。
 
 ### 本地运行
 
@@ -64,24 +69,6 @@ cp .env.example .env        # 填入你的 key
 python -m src.main --dry-run   # 不调 LLM、不发邮件——看看哪些岗位通过了规则筛选
 python -m src.main             # 完整运行
 ```
-
-### 子代理
-
-除每日打分外的两个可选 LLM 角色:
-
-- **公司情报官**(自动):日报中每个高分岗位附带公司简报——业务、规模、
-  工作语言文化、2-3 个申请切入点。每家公司只调用一次并永久缓存。信息来自
-  模型知识,面试前请自行核实。
-- **求职信写手**(手动、本地运行):
-
-  ```bash
-  python -m src.agents.draft --list        # 查看可起草的岗位
-  python -m src.agents.draft <岗位链接>     # 生成 drafts/<公司>-<岗位>.md
-  python -m src.agents.draft <岗位链接> --de  # 德语版
-  ```
-
-  草稿设计上保持诚实(绝不编造你没有的经历),存放在 `drafts/`(不入 git)。
-  发送前务必自己修改——它是草稿,不是你。任何内容都不会被自动提交。
 
 ### 追踪申请状态
 
@@ -98,11 +85,11 @@ GitHub Actions 的运行状态同步。
 ## 工作原理
 
 ```
-Arbeitnow API ─┐
-               ├─→ 去重 ─→ 规则筛选 ─→ LLM 精判 ─→ 日报推送
-ATS 公开接口 ──┘  (seen.json)  (免费)    (≤25 次调用)  (Top 5 + 差一点的)
-(Greenhouse/Ashby,
- 16 家已验证的德国科技公司)
+Arbeitnow API ──────────┐
+Greenhouse/Lever/Ashby ─┤
+Personio/Recruitee ─────┼─→ 跨来源去重 ─→ 规则筛选 ─→ LLM 精判 ─→ 日报
+SmartRecruiters ────────┤       (免费)       (免费)      (≤25 次调用)
+Workday ────────────────┘
 ```
 
 LLM 对每个岗位输出结构化判断:
@@ -111,6 +98,7 @@ LLM 对每个岗位输出结构化判断:
 {
   "working_language": "English",
   "german_required": "nice-to-have",
+  "language_confidence": 0.92,
   "evidence": "Our company language is English; German is a plus.",
   "match_score": 85,
   "red_flags": ["要求剩余注册学期 ≥2 个"],
@@ -118,8 +106,8 @@ LLM 对每个岗位输出结构化判断:
 }
 ```
 
-如果岗位要求的德语超过你的 `german_level`,匹配分会被限制在 30 以内——
-它会进入"差一点"区域而不是日报头条。
+如果岗位要求的德语超过你的 `german_level`,LLM 会扣除 10–20 分并添加明确的
+红旗提示。高匹配岗位仍会保留,由你判断是否值得挑战语言要求。
 
 ## 覆盖哪些岗位来源
 
@@ -128,11 +116,12 @@ LLM 对每个岗位输出结构化判断:
 - **[Arbeitnow](https://www.arbeitnow.com/english-speaking-jobs)** —— 德国英语友好
   岗位聚合板,约 300 个在招岗位,以创业公司和中型科技公司为主。公司每天都在变,
   无需配置。
-- **[`data/companies.yaml`](data/companies.yaml) 中固定监控的 35 家公司**,直接从
+- **[`data/companies.yaml`](data/companies.yaml) 中固定监控的 45 家公司**,直接从
   各家 ATS 接口拉取:金融科技(N26、Trade Republic、Solaris、德意志银行……)、
   消费科技(HelloFresh、GetYourGuide、Flix、FreeNow、Scout24……)、企业软件
   (Celonis、Contentful、commercetools、KONUX……)、工业制造(Airbus、蒂森克虏伯、
-  蔡司、BorgWarner、Zeppelin、Isar Aerospace)、医药(辉瑞、Moderna、GSK、IQVIA)等。
+  蔡司、BorgWarner、Zeppelin、Isar Aerospace)、医药(辉瑞、Moderna、GSK、IQVIA),
+  以及 UnternehmerTUM、Scalable Capital、TWAICE、neXenio 等新来源公司。
 
 **不覆盖**:使用 SuccessFactors 或完全自建招聘系统的公司(宝马、奔驰、奥迪、大众、
 西门子、博世、SAP、DHL……)。它们的学生岗偶尔会出现在 Arbeitnow 里,但别指望。
@@ -172,6 +161,9 @@ LLM 对每个岗位输出结构化判断:
 - 许多 Werkstudent 岗位要求在读注册证明(*Immatrikulationsbescheinigung*)
 
 ## 参与贡献
+
+本地配置、测试和数据源适配说明见 [`CONTRIBUTING.md`](CONTRIBUTING.md)。安全问题
+请按 [`SECURITY.md`](SECURITY.md) 中的方式私下报告。
 
 最有价值的 PR:向 [`data/companies.yaml`](data/companies.yaml) **添加英语友好的
 公司**——每家一行,slug 从公司招聘页 URL 获取(提交前请先验证 API 有响应)。

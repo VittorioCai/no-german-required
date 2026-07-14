@@ -1,12 +1,16 @@
-# no-german-required 🇩🇪🚫🗣️
+# English Job Agent for Germany 🇩🇪🔍
 
 **English** | [简体中文](README.zh-CN.md)
 
-**A job-hunting agent for international students in Germany who don't speak fluent German.**
+**No German Required? Check before you apply.**
+
+Finds and ranks English-friendly student jobs in Germany, detects hidden German
+requirements, and sends a daily digest.
 
 It scans English-friendly job sources daily, detects hidden German-language requirements
 that keyword filters miss, scores each job against *your* profile with an LLM, and emails
-you a short digest. Fork it, add two secrets, done — runs free on GitHub Actions.
+you a short digest. Fork it, add your provider and notification secrets, done —
+runs free on GitHub Actions.
 
 ## Why this exists
 
@@ -24,7 +28,7 @@ difference. This agent reads the fine print for you:
   your German level (B1 ≠ zero: "German is a plus" jobs stay in)
 - 📊 **Scored, not dumped** — every match comes with a 0-100 fit score, the working
   language, and red flags (unpaid, enrollment requirements, on-site 5 days…)
-- 📬 **One digest a day** — email or Telegram; top 5 matches plus 3 near-misses so
+- 📬 **One digest a day** — email or Telegram; Top 10 matches plus 3 near-misses so
   you can tune your filters
 - 📋 **Application tracker** — mark jobs as applied/interview/offer and they vanish
   from future digests
@@ -35,8 +39,9 @@ difference. This agent reads the fine print for you:
 
 **No auto-apply.** Ever. Auto-application bots get accounts banned, waste recruiters'
 time, and produce spray-and-pray applications that hurt you. This agent finds and
-filters; *you* apply. It also only uses **public, no-auth APIs**
-([Arbeitnow](https://www.arbeitnow.com/api), Greenhouse/Lever/Ashby public boards) —
+filters; *you* apply. It also only uses **public, no-auth APIs and career feeds**
+([Arbeitnow](https://www.arbeitnow.com/api), Greenhouse, Lever, Ashby, Workday,
+Personio, SmartRecruiters, and Recruitee) —
 no scraping behind login walls, no ToS violations.
 
 ## Quickstart (5 minutes)
@@ -60,7 +65,8 @@ no scraping behind login walls, no ToS violations.
    [`src/notify/telegram.py`](src/notify/telegram.py))
 5. **Test it**: Actions tab → *Daily job scan* → *Run workflow*
 
-Your digest arrives every morning at ~7:00 German time.
+Your digest runs at 06:00 UTC: approximately 07:00 German time in winter and 08:00
+in summer. GitHub Actions schedules can occasionally start a little later.
 
 ### Run locally
 
@@ -70,25 +76,6 @@ cp .env.example .env        # fill in your keys
 python -m src.main --dry-run   # no LLM calls, no email — see what passes the gate
 python -m src.main             # full run
 ```
-
-### Subagents
-
-Two optional LLM roles beyond the daily scorer:
-
-- **Company intel** (automatic): every top match in the digest gets a cached
-  one-time briefing — what the company does, scale, working-language culture,
-  2-3 application talking points. From model knowledge; verify before interviews.
-- **Cover-letter drafts** (manual, local):
-
-  ```bash
-  python -m src.agents.draft --list        # jobs available for drafting
-  python -m src.agents.draft <job-url>     # writes drafts/<company>-<title>.md
-  python -m src.agents.draft <job-url> --de
-  ```
-
-  Drafts are honest by design (never invent experience) and land in `drafts/`
-  (gitignored). Edit before sending — it's a draft, not you. Nothing is ever
-  submitted automatically.
 
 ### Track your applications
 
@@ -105,12 +92,11 @@ to sync state with the GitHub Actions runs.
 ## How it works
 
 ```
-Arbeitnow API ──┐
-ATS feeds ──────┼─→ dedup ─→ rule gate ─→ LLM judge ─→ email digest
-(Greenhouse/    │  (seen.json)  (free)    (budget-capped)  (top N + near misses)
- Ashby, 19 cos) │
-Workday ────────┘
-(Airbus, Deutsche Bank, ZEISS, thyssenkrupp, Pfizer, ...)
+Arbeitnow API ──────────┐
+Greenhouse/Lever/Ashby ─┤
+Personio/Recruitee ─────┼─→ cross-source dedup ─→ rule gate ─→ LLM judge ─→ digest
+SmartRecruiters ────────┤      (free)               (free)    (budget-capped)
+Workday ────────────────┘
 ```
 
 The LLM returns structured judgment per job:
@@ -119,6 +105,7 @@ The LLM returns structured judgment per job:
 {
   "working_language": "English",
   "german_required": "nice-to-have",
+  "language_confidence": 0.92,
   "evidence": "Our company language is English; German is a plus.",
   "match_score": 85,
   "red_flags": ["requires enrollment for 2+ more semesters"],
@@ -126,8 +113,9 @@ The LLM returns structured judgment per job:
 }
 ```
 
-If a job needs more German than your `german_level`, its score is capped at 30 —
-it lands in "near misses" instead of your inbox headline.
+If a job needs more German than your `german_level`, the LLM subtracts 10-20 points
+and adds a clear red flag. Strong matches remain visible so you can decide whether
+the language stretch is worth applying for.
 
 ## What's covered (job sources)
 
@@ -136,12 +124,14 @@ Two kinds of sources, both public and auth-free:
 - **[Arbeitnow](https://www.arbeitnow.com/english-speaking-jobs)** — a Germany-focused
   English-friendly job board, ~300 live postings, mostly startups and mid-size tech.
   Companies here change daily; you don't configure anything.
-- **35 monitored companies** in [`data/companies.yaml`](data/companies.yaml), fetched
+- **45 monitored companies** in [`data/companies.yaml`](data/companies.yaml), fetched
   directly from their ATS feeds:
   fintech (N26, Trade Republic, Solaris, Deutsche Bank...), consumer tech (HelloFresh,
   GetYourGuide, Flix, FreeNow, Scout24...), B2B software (Celonis, Contentful,
   commercetools, KONUX...), industrial (Airbus, thyssenkrupp Steel, ZEISS, BorgWarner,
-  Zeppelin, Isar Aerospace), pharma (Pfizer, Moderna, GSK, IQVIA) and more.
+  Zeppelin, Isar Aerospace), pharma (Pfizer, Moderna, GSK, IQVIA), plus Personio,
+  SmartRecruiters, and Recruitee employers such as UnternehmerTUM, Scalable Capital,
+  TWAICE, and neXenio.
 
 **Not covered:** companies on SuccessFactors or fully custom career portals
 (BMW, Mercedes-Benz, Audi, VW, Siemens, Bosch, SAP, DHL...). Their student roles
@@ -184,6 +174,10 @@ Not legal advice, but the rules the agent flags:
 - Many Werkstudent roles require current enrollment (*Immatrikulationsbescheinigung*)
 
 ## Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for local setup, tests, and source-adapter
+guidance. Please report security issues privately as described in
+[`SECURITY.md`](SECURITY.md).
 
 The most valuable PR: **add English-friendly companies** to
 [`data/companies.yaml`](data/companies.yaml) — one line each, slug from the company's

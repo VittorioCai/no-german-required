@@ -5,6 +5,10 @@ on:
     - cron: "0 6 * * *"   # 06:00 UTC ≈ 07:00/08:00 German time
   workflow_dispatch: {}     # manual trigger for testing
 
+concurrency:
+  group: daily-job-scan
+  cancel-in-progress: false
+
 permissions:
   contents: write           # to persist data/seen.json
 
@@ -19,6 +23,9 @@ jobs:
           python-version: "3.12"
 
       - run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
 
       - name: Run pipeline
         env:
@@ -42,5 +49,5 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/seen.json data/applications.json data/matches.json data/company_intel.json 2>/dev/null || git add data/seen.json
+          git add data/seen.json data/applications.json 2>/dev/null || git add data/seen.json
           git diff --cached --quiet || (git commit -m "chore: update seen jobs [skip ci]" && git push)

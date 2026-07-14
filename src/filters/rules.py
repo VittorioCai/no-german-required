@@ -83,6 +83,21 @@ def _match_any(patterns, text):
     return None
 
 
+def pre_score(job, profile) -> float:
+    """Free priority score used only to allocate the capped LLM budget."""
+    text = f"{job.title}\n{job.description}".lower()
+    fields = {field.lower() for field in profile.get("field_keywords", [])}
+    roles = {role.lower() for role in profile.get("role_keywords", [])}
+    score = min(sum(field in text for field in fields) * 10, 40)
+    score += min(sum(_title_matches_role(job.title.lower(), [role]) for role in roles) * 5, 15)
+    if _match_any(_e, text):
+        score += 20
+    if _match_any(_g, text):
+        score -= 20
+    score += min(len(job.description or "") / 4000 * 10, 10)
+    return score
+
+
 def gate(job, profile) -> tuple:
     """Returns (verdict, reason)."""
     text = f"{job.title}\n{job.description}"

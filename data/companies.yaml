@@ -1,9 +1,12 @@
 # English-friendly companies in Germany with public ATS feeds (no auth needed).
-# All slugs below verified alive on 2026-07-11. Add more via PR — find the slug
+# All slugs below verified alive on 2026-07-12. Add more via PR — find the slug
 # in the company's careers page URL:
 #   greenhouse: boards.greenhouse.io/<slug>  → api: boards-api.greenhouse.io/v1/boards/<slug>/jobs
 #   lever:      jobs.lever.co/<slug>         → api: api.lever.co/v0/postings/<slug>
 #   ashby:      jobs.ashbyhq.com/<slug>      → api: api.ashbyhq.com/posting-api/job-board/<slug>
+#   personio:   <slug>.jobs.personio.de       → <slug>.jobs.personio.de/xml?language=en
+#   recruitee:  <slug>.recruitee.com          → <slug>.recruitee.com/api/offers/
+#   smartrecruiters: jobs.smartrecruiters.com/<slug> → api.smartrecruiters.com/v1/companies/<slug>/postings
 # Dead slugs are skipped gracefully at runtime — but please prune them.
 
 companies:
@@ -29,6 +32,22 @@ companies:
   - {name: Moss, ats: ashby, slug: moss}
   - {name: Tacto, ats: ashby, slug: tacto}
 
+  # --- Personio XML feeds ---
+  - {name: UnternehmerTUM, ats: personio, slug: unternehmertum}
+  - {name: TWAICE, ats: personio, slug: twaice}
+  - {name: Entrix, ats: personio, slug: entrix}
+  - {name: Start2 Group, ats: personio, slug: start2}
+
+  # --- SmartRecruiters public posting feeds ---
+  - {name: Scalable Capital, ats: smartrecruiters, slug: ScalableGmbH}
+  - {name: Seven Senders, ats: smartrecruiters, slug: SevenSenders}
+  - {name: Haufe Group, ats: smartrecruiters, slug: HaufeGroup}
+
+  # --- Recruitee public careers feeds ---
+  - {name: neXenio, ats: recruitee, slug: nexenio}
+  - {name: Trafineo, ats: recruitee, slug: trafineo}
+  - {name: Dance, ats: recruitee, slug: dance}
+
   # --- Workday tenants (big corporates) ---
   # Verified via live job URLs on 2026-07-11. Find tenant/site in the careers
   # page URL: https://{tenant}.wd{N}.myworkdayjobs.com/{site}/...
@@ -49,5 +68,5 @@ companies:
 
 # Checked 2026-07-11 and NOT available via public ATS feeds (use own career systems
 # or moved ATS) — do not re-add without verifying:
-# Zalando, Delivery Hero, Flink, Babbel, wefox, Pitch, Personio, Aleph Alpha,
+# Zalando, Delivery Hero, Flink, Babbel, wefox, Pitch, Personio (the employer), Aleph Alpha,
 # DeepL, Choco, Helsing, Forto
