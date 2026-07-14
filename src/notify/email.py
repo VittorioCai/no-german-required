@@ -14,7 +14,12 @@ CARD = """
   <div style="color:#555;margin:4px 0">{company} · {location} · working language: {lang} ({confidence}% confidence) · German needed: {german}</div>
   <div style="margin:6px 0">{summary}</div>
   <div style="color:#888;font-size:13px">Evidence: “{evidence}”</div>
+  {intel}
   {flags}
+</div>"""
+
+INTEL = """<div style="background:#f6f8fa;border-radius:6px;padding:8px 10px;margin-top:6px;font-size:13px;color:#444">
+  🏢 {what} · {scale}<br>Language culture: {culture}<br>💡 {points}
 </div>"""
 
 
@@ -29,8 +34,19 @@ def _card(job, j):
     title = escape(job.title)
     linked_title = (f'<a href="{safe_url}" style="color:#1a73e8;text-decoration:none">'
                     f"{title}</a>") if safe_url else title
+    intel_html = ""
+    intel = j.get("intel")
+    if isinstance(intel, dict):
+        points = intel.get("talking_points", [])
+        points = points if isinstance(points, list) else []
+        intel_html = INTEL.format(
+            what=escape(str(intel.get("what", ""))),
+            scale=escape(str(intel.get("scale", ""))),
+            culture=escape(str(intel.get("language_culture", "unknown"))),
+            points="; ".join(escape(str(point)) for point in points),
+        )
     return CARD.format(
-        url=safe_url, title=linked_title, score=score,
+        url=safe_url, title=linked_title, score=score, intel=intel_html,
         score_color="#188038" if score >= 70 else "#e37400",
         company=escape(job.company), location=escape(job.location),
         lang=escape(str(j.get("working_language", "?"))),
