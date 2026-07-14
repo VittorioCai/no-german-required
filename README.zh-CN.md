@@ -40,7 +40,8 @@ Workday、Personio、SmartRecruiters、Recruitee)——
 
 ## 快速开始(5 分钟)
 
-1. **Fork** 本仓库(保持 public 可用免费 Actions 额度,private 则消耗你的配额)
+1. **Fork** 本仓库。使用真实个人档案或申请备注时建议设为 private;public 仓库会向
+   所有人公开 `profile.yaml`、申请追踪状态和已提交的岗位匹配数据。
 2. **编辑 [`profile.yaml`](profile.yaml)** —— 你的目标岗位、城市、德语水平和
    3 行简历摘要
 3. **添加仓库 secrets**(Settings → Secrets and variables → Actions → Secrets):
@@ -68,6 +69,7 @@ Workday、Personio、SmartRecruiters、Recruitee)——
 ```bash
 pip install -r requirements.txt
 cp .env.example .env        # 填入你的 key
+set -a; source .env; set +a # 将配置导出到当前 shell
 python -m src.main --dry-run   # 不调 LLM、不发邮件——看看哪些岗位通过了规则筛选
 python -m src.main             # 完整运行
 ```
@@ -88,7 +90,8 @@ GitHub Actions 的运行状态同步。
 
 公司情报会在邮件卡片中增加一段简短的公司背景。它**默认关闭**,因为生成新情报会
 消耗 LLM 调用。按默认配置启用后,每天 25 次总预算中最多预留 3 次用于公司情报,
-其余 22 次用于岗位判断;命中缓存不消耗调用。重要事实应在面试前自行核实。
+其余 22 个真实模型调用额度用于岗位判断;校验重试也会消耗额度,命中缓存则不消耗。
+重要事实应在面试前自行核实。
 
 求职信助手只在本地手动运行,只生成草稿,不会自动申请或发送:
 
@@ -98,9 +101,10 @@ python -m src.agents.draft <岗位链接>       # 英文草稿
 python -m src.agents.draft <岗位链接> --de  # 简单德语草稿
 ```
 
-草稿保存在 Git 忽略的 `drafts/` 目录,不会覆盖已有文件。只有手动执行命令时,
+草稿以纯文本保存在 Git 忽略的 `drafts/` 目录,不会覆盖已有文件。只有手动执行命令时,
 所选岗位和 `cv_summary` 才会发送给你配置的 LLM 提供商。`data/matches.json`
-只保存岗位信息,不保存个人档案。这两个功能是专用助手,不是自动投递的自治 agent。
+只保存岗位信息,不保存个人档案。日常岗位判断也会把 `cv_summary` 和岗位文本发送给
+该提供商。这两个功能是专用助手,不是自动投递的自治 agent。
 
 ## 工作原理
 

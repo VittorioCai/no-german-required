@@ -36,6 +36,12 @@ class ReadmeTests(unittest.TestCase):
         self.assertIn("默认关闭", chinese)
         self.assertIn("if: always()", workflow)
         self.assertIn("data/matches.json data/company_intel.json", workflow)
+        self.assertIn("persist-credentials: false", workflow)
+        self.assertIn("GH_TOKEN: ${{ github.token }}", workflow)
+        self.assertIn("Public repositories expose", english)
+        self.assertIn("日常岗位判断也会", chinese)
+        self.assertIn("source .env", english)
+        self.assertIn("source .env", chinese)
 
     def test_community_documents_and_current_defaults_are_documented(self):
         english = (ROOT / "README.md").read_text(encoding="utf-8")

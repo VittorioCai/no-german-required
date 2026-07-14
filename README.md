@@ -46,7 +46,9 @@ no scraping behind login walls, no ToS violations.
 
 ## Quickstart (5 minutes)
 
-1. **Fork** this repo (keep it public for free Actions minutes, or private with your quota)
+1. **Fork** this repo. Prefer a private repository when using a real profile or
+   application notes. Public repositories expose `profile.yaml`, tracked application
+   state, and committed job-match data to everyone.
 2. **Edit [`profile.yaml`](profile.yaml)** — your roles, cities, German level, and a
    3-line CV summary
 3. **Add repository secrets** (Settings → Secrets and variables → Actions → Secrets):
@@ -76,6 +78,7 @@ in summer. GitHub Actions schedules can occasionally start a little later.
 ```bash
 pip install -r requirements.txt
 cp .env.example .env        # fill in your keys
+set -a; source .env; set +a # export the file for this shell
 python -m src.main --dry-run   # no LLM calls, no email — see what passes the gate
 python -m src.main             # full run
 ```
@@ -96,8 +99,9 @@ to sync state with the GitHub Actions runs.
 
 Company intel adds a short, cached company briefing to email cards. It is **disabled by
 default** because it uses extra LLM calls. With the defaults, enabling it reserves up to
-3 of the daily 25 calls for intel, leaving 22 for job judgments; cached briefings use no
-call. Treat the summary as orientation and verify important facts before an interview.
+3 of the daily 25 calls for intel, leaving 22 actual model-call slots for job judgments;
+validation retries consume those slots and cached briefings use no call. Treat the summary
+as orientation and verify important facts before an interview.
 
 The cover-letter helper is manual and local. It drafts but never applies or sends:
 
@@ -107,10 +111,11 @@ python -m src.agents.draft <job-url>       # English draft
 python -m src.agents.draft <job-url> --de  # simple German draft
 ```
 
-Drafts are saved under the gitignored `drafts/` directory and never overwrite an
+Drafts are saved as plain text under the gitignored `drafts/` directory and never overwrite an
 existing file. The selected posting and your `cv_summary` are sent to your configured
 LLM provider only when you run this command. `data/matches.json` stores job data, not
-your applicant profile. These are focused helpers, not autonomous application agents.
+your applicant profile. The daily job judgment also sends `cv_summary` and job text to
+that provider. These are focused helpers, not autonomous application agents.
 
 ## How it works
 

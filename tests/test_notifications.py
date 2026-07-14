@@ -32,6 +32,12 @@ class NotificationTests(unittest.TestCase):
         self.assertIn("&lt;b&gt;Intern&lt;/b&gt;", card)
         self.assertIn("87%", card)
 
+    def test_telegram_card_escapes_quotes_in_safe_scheme_url(self):
+        self.job.url = 'https://example.com/" onclick="alert(1)'
+        card = telegram._card(self.job, self.result)
+        self.assertNotIn('onclick="alert(1)', card)
+        self.assertIn("&quot;", card)
+
     def test_email_card_escapes_company_intel(self):
         self.result["intel"] = {
             "what": "<img src=x>",

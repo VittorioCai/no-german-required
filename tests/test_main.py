@@ -37,8 +37,30 @@ class MainTests(unittest.TestCase):
     def test_llm_budgets_reserve_intel_within_total_cap(self):
         self.assertEqual(main._llm_budgets(25, False, 3), (25, 0))
         self.assertEqual(main._llm_budgets(25, True, 3), (22, 3))
-        self.assertEqual(main._llm_budgets(2, True, 5), (0, 2))
+        self.assertEqual(main._llm_budgets(2, True, 5), (1, 1))
+        self.assertEqual(main._llm_budgets(1, True, 5), (1, 0))
         self.assertEqual(main._llm_budgets(-1, True, 3), (0, 0))
+
+    def test_judgment_retries_stay_within_actual_call_budget(self):
+        jobs = [Job(f"job:{index}", "Data Intern", f"Company {index}", "Berlin",
+                    f"https://example.com/{index}", "data", "test", country="DE")
+                for index in range(4)]
+        source = type("MultipleSource", (Source,), {"fetch": lambda self: jobs})
+        profile = {"min_score": 30, "role_keywords": ["intern"], "field_keywords": ["data"]}
+        with patch.object(main, "load_yaml", side_effect=[profile, {"companies": []}]), \
+             patch.object(main, "load_seen", return_value={}), \
+             patch("src.track.tracked_urls", return_value=set()), \
+             patch.object(main, "ArbeitnowSource", source), \
+             patch.object(main, "ATSSource", EmptySource), \
+             patch("src.sources.workday.WorkdaySource", EmptySource), \
+             patch.object(main, "gate", return_value=("pass", "ok")), \
+             patch("src.filters.llm_judge.complete_json", return_value={"match_score": "bad"}) as complete, \
+             patch.object(main, "save_seen"), patch.object(main, "save_matches"), \
+             patch.object(main, "MAX_LLM_CALLS", 3), patch.object(main, "MAX_INTEL_CALLS", 0), \
+             patch.dict(os.environ, {"ENABLE_COMPANY_INTEL": "false"}):
+            main.run()
+
+        self.assertEqual(complete.call_count, 3)
 
     def test_load_seen_accepts_legacy_and_timestamped_records(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -63,6 +85,16 @@ class MainTests(unittest.TestCase):
         self.assertEqual(len(saved), 20000)
         self.assertNotIn("lexically-last-but-old", ids)
 
+    def test_save_seen_uses_atomic_replace(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "seen.json"
+            real_replace = os.replace
+            with patch.object(main, "SEEN_PATH", str(path)), \
+                 patch.object(main.os, "replace", wraps=real_replace) as replace:
+                main.save_seen({"id": "2026-07-14T00:00:00+00:00"})
+            replace.assert_called_once_with(f"{path}.tmp", str(path))
+            self.assertEqual(json.loads(path.read_text())["seen"][0]["id"], "id")
+
     def test_successful_judgment_is_saved_before_notification_failure(self):
         events = []
 
@@ -82,7 +114,7 @@ class MainTests(unittest.TestCase):
              patch.object(main, "ATSSource", Source), \
              patch("src.sources.workday.WorkdaySource", Source), \
              patch.object(main, "gate", return_value=("pass", "ok")), \
-             patch("src.filters.llm_judge.judge", return_value=JUDGMENT), \
+             patch("src.filters.llm_judge.judge_with_usage", return_value=(JUDGMENT, 1)), \
              patch.object(main, "save_seen", side_effect=save_seen), \
              patch.object(main, "save_matches"), \
              patch("src.notify.email.send_digest", side_effect=fail_notification), \
@@ -118,7 +150,7 @@ class MainTests(unittest.TestCase):
              patch.object(main, "ATSSource", Source), \
              patch("src.sources.workday.WorkdaySource", Source), \
              patch.object(main, "gate", return_value=("pass", "ok")), \
-             patch("src.filters.llm_judge.judge", return_value=JUDGMENT.copy()), \
+             patch("src.filters.llm_judge.judge_with_usage", return_value=(JUDGMENT.copy(), 1)), \
              patch.object(main, "save_seen", side_effect=save_seen), \
              patch.object(main, "save_matches", side_effect=save_matches), \
              patch("src.agents.intel.enrich", side_effect=enrich), \
@@ -141,9 +173,9 @@ class MainTests(unittest.TestCase):
         source = type("CandidateSource", (Source,), {"fetch": lambda self: [weak, strong, rejected]})
         judged_ids = []
 
-        def judge(job, profile):
+        def judge(job, profile, max_calls):
             judged_ids.append(job.id)
-            return {**JUDGMENT, "match_score": 0}
+            return {**JUDGMENT, "match_score": 0}, 1
 
         def gate(job, profile):
             return ("reject", "title does not match role keywords") if job.id == "rejected" else ("pass", "ok")
@@ -158,7 +190,7 @@ class MainTests(unittest.TestCase):
              patch.object(main, "ATSSource", EmptySource), \
              patch("src.sources.workday.WorkdaySource", EmptySource), \
              patch.object(main, "gate", side_effect=gate), \
-             patch("src.filters.llm_judge.judge", side_effect=judge), \
+             patch("src.filters.llm_judge.judge_with_usage", side_effect=judge), \
              patch.object(main, "save_seen"), patch.object(main, "save_matches"), \
              patch.object(main, "MAX_LLM_CALLS", 1), \
              redirect_stdout(output):

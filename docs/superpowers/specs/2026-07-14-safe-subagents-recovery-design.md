@@ -24,13 +24,13 @@ All intel strings pass through the same HTML escaping used for job and judgment 
 
 ## Draft component
 
-The cover-letter feature remains a manual command. It reads only jobs previously placed in `data/matches.json`, sends the selected job plus `cv_summary` to the configured LLM, and writes a local Markdown draft under the gitignored `drafts/` directory. It never submits an application or sends a message.
+The cover-letter feature remains a manual command. It reads only validated jobs previously placed in `data/matches.json`, sends the selected job plus `cv_summary` to the configured LLM, and writes a local plain-text draft under the gitignored `drafts/` directory. It never submits an application or sends a message.
 
 The prompt explicitly marks the posting as untrusted input. Draft filenames include a stable URL hash so jobs with identical company/title text do not overwrite each other. Existing files are not silently replaced.
 
 ## Pipeline and failure handling
 
-The stable fetch, deduplication, gating, and priority behavior remains unchanged. After judgment, successfully processed and rule-rejected jobs are written to `seen.json` before company intel, match persistence, or notifications. The workflow state-commit step uses `if: always()` so a later notifier failure can still persist completed paid work. A workflow concurrency group prevents scheduled and manual scans from racing.
+The stable fetch, deduplication, gating, and priority behavior remains unchanged. Actual model attempts, including validation retries, share one call budget. After judgment, successfully processed and rule-rejected jobs are written atomically to `seen.json` before company intel, match persistence, or notifications. The workflow state-commit step uses `if: always()` so a later notifier failure can still persist completed paid work. A workflow concurrency group prevents scheduled and manual scans from racing, and checkout credentials are exposed only to the final state-push step.
 
 `matches.json` contains at most 200 recent digest jobs and no applicant profile. `company_intel.json` contains only validated public-company summaries and timestamps. Neither file contains API keys.
 

@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-python@v6
         with:
@@ -50,8 +52,13 @@ jobs:
 
       - name: Persist scan state
         if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/seen.json data/applications.json data/matches.json data/company_intel.json 2>/dev/null || git add data/seen.json
-          git diff --cached --quiet || (git commit -m "chore: update seen jobs [skip ci]" && git push)
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: update seen jobs [skip ci]"
+            git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:${GITHUB_REF_NAME}"
+          fi

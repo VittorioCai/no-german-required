@@ -37,7 +37,9 @@ def _env_flag(name: str) -> bool:
 
 def _llm_budgets(total: int, intel_enabled: bool, intel_max: int) -> tuple[int, int]:
     total = max(total, 0)
-    intel = min(max(intel_max, 0), total) if intel_enabled else 0
+    # Intel needs at least one judged match to enrich, so never reserve the
+    # entire budget away from judgment.
+    intel = min(max(intel_max, 0), max(total - 1, 0)) if intel_enabled else 0
     return total - intel, intel
 
 
@@ -65,9 +67,11 @@ def load_seen():
 def save_seen(seen: dict):
     os.makedirs(os.path.dirname(SEEN_PATH), exist_ok=True)
     newest = sorted(seen.items(), key=lambda item: item[1])[-20000:]
-    with open(SEEN_PATH, "w", encoding="utf-8") as f:
+    temporary = f"{SEEN_PATH}.tmp"
+    with open(temporary, "w", encoding="utf-8") as f:
         json.dump({"seen": [{"id": job_id, "seen_at": seen_at}
                             for job_id, seen_at in newest]}, f, indent=0)
+    os.replace(temporary, SEEN_PATH)
 
 
 def save_matches(pairs: list, path: str = None, now: datetime = None):
@@ -80,6 +84,9 @@ def save_matches(pairs: list, path: str = None, now: datetime = None):
             matches = {}
     except (FileNotFoundError, json.JSONDecodeError):
         matches = {}
+    from .agents.matches import valid_match
+    matches = {url: match for url, match in matches.items()
+               if isinstance(url, str) and valid_match(match)}
 
     saved_at = (now or datetime.now(timezone.utc)).isoformat()
     for job, result in pairs:
@@ -197,11 +204,18 @@ def run(dry_run: bool = False):
         return
 
     # 4. LLM judge (budget-capped)
-    from .filters.llm_judge import judge
+    from .filters.llm_judge import judge_with_usage
     candidates.sort(key=lambda job: pre_score(job, profile), reverse=True)
     judge_budget, intel_budget = _llm_budgets(
         MAX_LLM_CALLS, _env_flag("ENABLE_COMPANY_INTEL"), MAX_INTEL_CALLS)
-    judged = [(job, judge(job, profile)) for job in candidates[:judge_budget]]
+    judged = []
+    remaining_judge_calls = judge_budget
+    for job in candidates:
+        if remaining_judge_calls <= 0:
+            break
+        result, calls = judge_with_usage(job, profile, max_calls=remaining_judge_calls)
+        remaining_judge_calls -= calls
+        judged.append((job, result))
     stats["judged"] = len(judged)
     judged.sort(key=lambda x: x[1]["match_score"], reverse=True)
 

@@ -4,6 +4,7 @@ Setup: create a bot with @BotFather, get TELEGRAM_BOT_TOKEN; message the bot
 once, then get your chat id from https://api.telegram.org/bot<token>/getUpdates
 """
 import os
+from html import escape
 from urllib.parse import urlparse
 
 import requests
@@ -12,7 +13,7 @@ MAX_LEN = 4000  # Telegram hard limit is 4096
 
 
 def _esc(text: str) -> str:
-    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    return escape(str(text), quote=True)
 
 
 def _card(job, j) -> str:

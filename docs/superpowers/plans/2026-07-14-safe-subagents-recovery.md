@@ -36,7 +36,7 @@ Expected: all 28 restored tests pass.
 
 - [ ] **Step 1: Write failing budget tests**
 
-Add tests asserting `_llm_budgets(25, False, 3) == (25, 0)`, `_llm_budgets(25, True, 3) == (22, 3)`, and clamping when the intel request exceeds the total.
+Add tests asserting `_llm_budgets(25, False, 3) == (25, 0)`, `_llm_budgets(25, True, 3) == (22, 3)`, and clamping that always leaves at least one judgment call when the total is positive. Add an integration test proving judgment retries also consume the same actual-call budget.
 
 - [ ] **Step 2: Verify RED**
 
@@ -50,11 +50,12 @@ Implement:
 
 ```python
 def _llm_budgets(total: int, intel_enabled: bool, intel_max: int) -> tuple[int, int]:
-    intel = min(max(intel_max, 0), max(total, 0)) if intel_enabled else 0
+    total = max(total, 0)
+    intel = min(max(intel_max, 0), max(total - 1, 0)) if intel_enabled else 0
     return max(total - intel, 0), intel
 ```
 
-Use its judgment limit in the existing candidate slice. Keep intel disabled unless `ENABLE_COMPANY_INTEL` is truthy.
+Use a `judge_with_usage` API so validation retries decrement this actual-call limit instead of treating the limit as a candidate count. Keep intel disabled unless `ENABLE_COMPANY_INTEL` is truthy.
 
 - [ ] **Step 4: Verify GREEN**
 
@@ -111,7 +112,7 @@ Expected: FAIL because the draft module and match persistence API do not exist.
 
 - [ ] **Step 3: Implement minimal persistence and CLI**
 
-Add `save_matches(top + near)` after seen-state persistence. Implement `python -m src.agents.draft --list` and URL-based drafting, with an untrusted-posting delimiter in the prompt and a filename ending in the first eight hex characters of `sha256(url)`; open output with exclusive mode `"x"`.
+Add `save_matches(top + near)` after seen-state persistence and discard malformed historical entries. Implement `python -m src.agents.draft --list` and URL-based plain-text drafting, with an escaped untrusted-posting delimiter in the prompt and a filename ending in the first eight hex characters of `sha256(url)`; check before the LLM call and open output with exclusive mode `"x"`.
 
 - [ ] **Step 4: Verify GREEN**
 
