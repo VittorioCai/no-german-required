@@ -1,1 +1,41 @@
-{}
+{
+ "Celonis": {
+  "updated_at": "2026-07-15T11:07:14.250292+00:00",
+  "intel": {
+   "what": "Celonis is a global leader in Process Intelligence and Process Mining technology, providing an enterprise SaaS platform that uses AI to optimize business processes.",
+   "scale": "large enterprise SaaS company (fastest-growing in its category)",
+   "language_culture": "English",
+   "talking_points": [
+    "Demonstrate interest in AI-assisted demo workflows and process mining automation.",
+    "Highlight ability to translate complex business processes (e.g., supply chain, finance) into compelling stories.",
+    "Emphasize curiosity about both the technical and commercial sides of enterprise AI."
+   ]
+  }
+ },
+ "Scalable Capital": {
+  "updated_at": "2026-07-15T11:07:14.250292+00:00",
+  "intel": {
+   "what": "Scalable Capital is a digital investment and banking platform with a full banking licence, serving over one million clients in Europe.",
+   "scale": "700+ employees",
+   "language_culture": "English (job posting and company values in English; offices in Germany, UK, Austria, Italy)",
+   "talking_points": [
+    "Emphasize your strong attention to detail and ability to identify trends in HR data, aligning with their focus on data integrity and analytics.",
+    "Highlight any experience or coursework in automating People Operations workflows, as they value streamlining manual tasks.",
+    "Mention your interest in supporting HR metrics and dashboards to help track departmental performance, directly relevant to the role's responsibilities."
+   ]
+  }
+ },
+ "Flix": {
+  "updated_at": "2026-07-15T11:07:14.250292+00:00",
+  "intel": {
+   "what": "Flix is a travel technology company that aims to make travel more accessible, sustainable, and affordable through AI-driven customer service automation.",
+   "scale": "unknown",
+   "language_culture": "unknown",
+   "talking_points": [
+    "Highlight your ability to interview process owners and document actual workflows, including exceptions and workarounds.",
+    "Emphasize comfort with data-driven analysis using process mining tools like Celonis to identify automation opportunities.",
+    "Show your skill in translating business rules into precise decision tables that engineers can implement directly."
+   ]
+  }
+ }
+}
