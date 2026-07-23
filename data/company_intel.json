@@ -102,5 +102,31 @@
     "Close collaboration with founders and product team, with potential to derive a master's thesis topic from the work."
    ]
   }
+ },
+ "Solaris": {
+  "updated_at": "2026-07-23T11:25:10.374020+00:00",
+  "intel": {
+   "what": "Solaris is a Berlin-based embedded finance platform and licensed bank that provides Banking-as-a-Service to businesses.",
+   "scale": "300 employees",
+   "language_culture": "English",
+   "talking_points": [
+    "Interest in non-financial risk management and regulatory compliance within a banking-as-a-service environment",
+    "Analytical and detail-oriented, with basic knowledge of banking law and regulatory standards",
+    "Proficient in Google Workspace/MS Office and clear written communication skills for reporting and incident escalation"
+   ]
+  }
+ },
+ "idealo internet GmbH": {
+  "updated_at": "2026-07-23T11:25:10.374020+00:00",
+  "intel": {
+   "what": "idealo internet GmbH operates a price comparison platform and runs paid search advertising campaigns across multiple European markets.",
+   "scale": "unknown",
+   "language_culture": "English",
+   "talking_points": [
+    "Direct mentoring from experienced Performance Marketing Managers on real campaign operations",
+    "Hands-on ownership of Google Ads tasks such as optimization, reporting, and keyword analysis",
+    "Exposure to international campaign management across several European markets"
+   ]
+  }
  }
 }
