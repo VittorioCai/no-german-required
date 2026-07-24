@@ -128,5 +128,18 @@
     "Exposure to international campaign management across several European markets"
    ]
   }
+ },
+ "TWAICE": {
+  "updated_at": "2026-07-24T11:18:17.918552+00:00",
+  "intel": {
+   "what": "TWAICE builds software that transforms battery data into insights to support the energy transition.",
+   "scale": "scale-up",
+   "language_culture": "unknown",
+   "talking_points": [
+    "Hands-on experience with real operational battery data and digital twins",
+    "Opportunity to contribute to algorithm and data pipeline development",
+    "Customer-facing role in a fast-growing scale-up with flexible hours"
+   ]
+  }
  }
 }
